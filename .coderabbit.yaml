@@ -1,0 +1,157 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# Lentago Labs — CodeRabbit central configuration.
+#
+# This file lives in lentago/coderabbit and is inherited by every repository in
+# the org that does not carry its own .coderabbit.yaml. Repo-level files win
+# outright (configuration sources do not merge), so a repo that needs something
+# different copies this file and edits it, rather than adding a one-line override.
+#
+# The intent: CodeRabbit is a second reviewer, not a gate. It never blocks a
+# merge, it never rewrites a PR description (the fleet's PR body becomes the
+# squash commit message and stays the author's), and it reads the fleet's own
+# rules so its comments agree with them.
+
+language: en-US
+
+tone_instructions: >-
+  Specific and brief: file and line, the defect or risk in one sentence, the fix
+  when short. No praise, no restating the diff, no style nits unless they hide
+  a bug. Judge reader-facing Markdown by the Lentago voice guide.
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+
+  # The summary goes in the walkthrough comment, never into the PR description.
+  high_level_summary: true
+  high_level_summary_in_walkthrough: true
+  collapse_walkthrough: true
+  changed_files_summary: true
+  sequence_diagrams: false
+  poem: false
+  estimate_code_review_effort: true
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+  suggested_labels: true
+  auto_apply_labels: false
+  suggested_reviewers: false
+  auto_assign_reviewers: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+    # Dependabot's bumps are reviewed by the required checks, not by prose.
+    ignore_usernames:
+      - "dependabot[bot]"
+
+  # Generated or harvested trees: reviewing them is noise, and a hand-edit to
+  # them already fails CI in the owning repo.
+  path_filters:
+    - "!**/brand/generated/**"
+    - "!**/demo/generated/**"
+    - "!**/fleet-reports/fleet-report.md"
+    - "!**/fleet-reports/incidents.md"
+    - "!**/metrics/language-census.md"
+    - "!**/package-lock.json"
+    - "!**/*.lock"
+    - "!**/.terraform.lock.hcl"
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+
+  path_instructions:
+    - path: "**/*.tf"
+      instructions: >-
+        Infrastructure as code for the lentago estate and for kits that run in a
+        client's own accounts. Flag: any IAM Allow with "*" resources where the
+        service supports ARNs; any role that can modify its own permissions,
+        policy, or permissions boundary; secrets or keys in variables, locals,
+        state, or environment blocks; a new repository or role created without
+        the fleet's rails (prevent_destroy, archive_on_destroy, OIDC trust using
+        the immutable repo:<org>@<id>/<repo>@<id> subject for repos created after
+        mid-2026); anything that would change a live surface outside this
+        repository without being codified here.
+    - path: "**/.github/workflows/*.yml"
+      instructions: >-
+        Fleet rule: a workflow whose check is REQUIRED on main must not be
+        path-filtered at the on: level, or it deadlocks every non-matching PR;
+        filter inside the job instead. Flag: broad permissions blocks (prefer
+        the minimum per job), third-party actions not pinned to a major, secrets
+        echoed to logs, workflows that push or open PRs with GITHUB_TOKEN (the
+        org forbids Actions creating PRs by default), and any step that mutates
+        a Terraform-enforced surface outside its owning repo.
+    - path: "**/*.md"
+      instructions: >-
+        Reader-facing prose follows lentago/.github docs/voice.md: written for one
+        reader (a nonprofit's one tech person), second person, plain words, every
+        term of art defined in the sentence where it first appears, costs and
+        times stated plainly, every claim about the fleet linked to the repo,
+        file, or PR that proves it. Flag the retired words: "dogfooding",
+        "training ground", "curriculum", "trainee", "the lab", "colleagues",
+        "book a consult", "org membership". Records (ADRs, incident reports,
+        fleet reports) keep a neutral factual voice and are exempt from the
+        register, not from accuracy.
+    - path: "**/CLAUDE.md"
+      instructions: >-
+        Operating notes for the fleet's agents. They must NOT restate the
+        fleet-wide PR workflow, attribution, or live-state rules (canonical in
+        lentago/shared-workflows CLAUDE.md); flag restatements and anything that
+        contradicts the canonical text.
+    - path: "core/**/*.py"
+      instructions: >-
+        In lentago/uvularia this is code a client runs in CI: Python 3.12
+        standard library only, readable by a non-programmer. Flag any new
+        import outside the standard library, any check that cannot fail (no
+        fixture proves it red), any path where missing data renders as success
+        rather than "no data", and any publish-time value derived from an
+        author's clock instead of the server-side receipt.
+    - path: "templates/**"
+      instructions: >-
+        Client-facing templates: nothing Lentago-specific may appear (no
+        hostnames, account ids, container ids, estate names). Everything must
+        work in a stranger's org with a free GitHub account; flag assumptions
+        about org settings, labels, secrets, or paid plans that a fresh repo
+        would not have.
+
+  tools:
+    shellcheck:
+      enabled: true
+    actionlint:
+      enabled: true
+    yamllint:
+      enabled: true
+    markdownlint:
+      enabled: true
+    ruff:
+      enabled: true
+    gitleaks:
+      enabled: true
+    tflint:
+      enabled: true
+    hadolint:
+      enabled: true
+
+  pre_merge_checks:
+    title:
+      mode: warning
+      requirements: >-
+        Imperative, specific, under 72 characters, and matching or refining the
+        issue title it closes.
+    description:
+      mode: warning
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  opt_out: false
+  learnings:
+    scope: global
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "**/CLAUDE.md"
+      - "lentago/.github:docs/voice.md"
+      - "lentago/shared-workflows:CLAUDE.md"
