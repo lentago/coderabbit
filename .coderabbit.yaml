@@ -93,6 +93,11 @@ reviews:
         "book a consult", "org membership". Records (ADRs, incident reports,
         fleet reports) keep a neutral factual voice and are exempt from the
         register, not from accuracy.
+        The banner line at the top of a README header block, an image whose alt
+        text is the repository's brand tagline copied verbatim from
+        lentago/.github brand/generated/<repo>/readme.md, is a label set once
+        in brand/fleet.json, not prose: do not flag undefined terms of art in
+        that alt text (lentago/.github#260).
     - path: "**/CLAUDE.md"
       instructions: >-
         Operating notes for the fleet's agents. They must NOT restate the
